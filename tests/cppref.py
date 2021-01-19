@@ -48,12 +48,12 @@ def cppref(query: str):
             f"[`std::{q}`](http://en.cppreference.com/w/cpp/{q})")
 
     for _, result in enumerate(results):
+        result = result.replace("src/cppref/", "")
         check_name = result.replace(
             "http://en.cppreference.com/w/", "")
         check_name = check_name.replace("\\", "/")
         # print(check_name)
 
-        check_name = check_name.replace("src/cppref/cpp/", "")
         # print(check_name)
         f_name = check_name.replace("/", "::")
         f_name = f_name.replace(".html", "")
@@ -101,6 +101,7 @@ def cref(query: str):
             f"[`{query}`](http://en.cppreference.com/w/c/{query})")
 
     for _, result in enumerate(results):
+        result = result.replace("src/cppref/", "")
         check_name = result.replace("http://en.cppreference.com/w/", "")
 
         check_name = check_name.replace(
@@ -108,7 +109,6 @@ def cref(query: str):
         # print(check_name)
 
         f_name = check_name.replace(".html", "")
-        f_name = f_name.replace("src/cppref/c/", "")
 
         if check_name.startswith(("language", "concept")) and not check_name.startswith("concepts"):
             special_pages.append(
@@ -138,4 +138,4 @@ def cref(query: str):
     print(f'[`{query}` results]({url})')
 
 
-cref(search)
+cppref(search)
