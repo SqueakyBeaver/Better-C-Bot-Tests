@@ -2,140 +2,100 @@ import glob
 import os
 
 
-def get_directory_files(query, directory):
-    for file in glob.iglob(f"{directory}/*", recursive=True):
-        if not query.lower() in file.lower():
-            continue
-        yield f'http://en.cppreference.com/w/{file.replace("/src/cppref", "")}'
-        if not os.path.isdir(file):
-            continue
-        yield from get_directory_files(query, file)
+def get_libs_list(language: str):
+    with open(f"src/cppref/{language}libs.txt", "r") as libs:
+        for item in libs:
+            if " " in item:
+                # The [:-1] is to remove the '\n' written to the end of each line
+                yield item[:-1].split(" ")
 
 
-def get_corresponding_files(query: str, language: str):
-    if query.startswith("std::"):
-        query = query.replace("std::", "")
-
-    query = query.replace("::", "/")
-    output = []
-    to_queue = list(get_directory_files(query, f"src/cppref/{language}/**"))
-    for index, each in enumerate(to_queue):
-        if each.endswith(".html"):
-            continue
-        output.append(
-            to_queue.pop(index))
-
-    output.extend(to_queue)
-    return output
+def get_language_list(language: str):
+    with open(f"src/cppref/{language}lang.txt", "r") as lang:
+        for item in lang:
+            if " " in item:
+                yield item[:-1].split(" ")
 
 
-search = ""
-search = input("Input: ")
+def find_results(language: str, query: str):
+    libs = get_libs_list(language)
+    lang = get_language_list(language)
+
+    res = {"language": [], "libs": []}
+
+    count = 0
+    for path in lang:
+        if count >= 5:
+            break
+        if query.lower() in path:
+            count += 1
+            res["language"].append(path)
+
+    count = 0
+    for path in libs:
+        if count >= 5:
+            break
+        if query.lower() in path:
+            count += 1
+            res["libs"].append(path)
+
+    return res
 
 
 def cppref(query: str):
     """Search something on cppreference"""
-    results = get_corresponding_files(query, "cpp")
 
-    url = f'http://en.cppreference.com/w/cpp/index.php?title=Special:Search?search={query}'
+    results = find_results("cpp", query)
 
-    special_pages = []
-    description = []
-    q = query.replace('std::', '')
+    url = f'https://en.cppreference.com/mwiki/index.php?title=Special%3ASearch&search={query}'
 
-    if os.path.isdir(f"src/cppref/cpp/{q}"):
-        description.append(
-            f"[`std::{q}`](http://en.cppreference.com/w/cpp/{q})")
+    lang_results = []
+    lib_results = []
 
-    for _, result in enumerate(results):
-        result = result.replace("src/cppref/", "")
-        check_name = result.replace(
-            "http://en.cppreference.com/w/", "")
-        check_name = check_name.replace("\\", "/")
-        # print(check_name)
+    for i in results["language"]:
+        lang_results.append(
+            f"[`({i[0]}) {'/'.join(i[1:])}`](http://en.cppreference.com/w/cpp/{'/'.join(i)})")
 
-        # print(check_name)
-        f_name = check_name.replace("/", "::")
-        f_name = f_name.replace(".html", "")
+    for i in results["libs"]:
+        lib_results.append(
+            f"[`({i[0]}) std::{'::'.join(i[1:])}`](http://en.cppreference.com/w/cpp/{'/'.join(i)})")
 
-        if check_name.startswith(("language", "concept")) and not check_name.startswith("concepts"):
-            special_pages.append(
-                f'[`{f_name}`]({result})')
-            continue
+    print("\nLanguage Results:\n")
+    print("\n".join(lang_results))
+    print("\nLibrary Results:\n")
+    print("\n".join(lib_results))
 
-        description.append(
-            f'[`std::{f_name}`]({result})')
-
-    if len(special_pages) > 0:
-        print('Language Results')
-        print('\n'.join(
-            special_pages))
-        if len(description):
-            print('Library Results')
-            print('\n'.join(
-                description[:10]))
-    else:
-        if not len(description):
-            return print('No results found.')
-
-        desc_str = '\n'.join(description[:15])
-        print('Search Results')
-        print(desc_str)
-
-    print('See More')
-    print(f'[`{query}` results]({url})')
+    print("Didn't find what you were looking for?")
+    print(f'See more [`{query}` results]({url})')
 
 
 def cref(query: str):
     """Search something on cppreference"""
-    results = get_corresponding_files(query, "c")
 
-    url = f'http://en.cppreference.com/w/c/index.php?title=Special:Search?search={query}'
+    results = find_results("c", query)
 
-    special_pages = []
-    description = []
+    url = f'https://en.cppreference.com/mwiki/index.php?title=Special%3ASearch&search={query}'
 
-    # No need to replace std:: with "" since this is a c reference search
-    if os.path.isdir(f"src/cppref/c/{query}"):
-        description.append(
-            f"[`{query}`](http://en.cppreference.com/w/c/{query})")
+    lang_results = []
+    lib_results = []
 
-    for _, result in enumerate(results):
-        result = result.replace("src/cppref/", "")
-        check_name = result.replace("http://en.cppreference.com/w/", "")
+    for i in results["language"]:
+        lang_results.append(
+            f"[`({i[0]}) {'/'.join(i[1:])}`](http://en.cppreference.com/w/c/{'/'.join(i)})")
 
-        check_name = check_name.replace(
-            "\\", "/")
-        # print(check_name)
+    for i in results["libs"]:
+        lib_results.append(
+            f"[`({'/'.join(i[:-1])}) {i[-1]}`](http://en.cppreference.com/w/c/{'/'.join(i)})")
 
-        f_name = check_name.replace(".html", "")
+    print("\nLanguage Results:\n")
+    print("\n".join(lang_results))
+    print("\nLibrary Results:\n")
+    print("\n".join(lib_results))
 
-        if check_name.startswith(("language", "concept")) and not check_name.startswith("concepts"):
-            special_pages.append(
-                f'[`{f_name}`]({result})')
-            continue
-
-        description.append(
-            f'[`{f_name}`]({result})')
-
-    if len(special_pages) > 0:
-        print('Language Results')
-        print('\n'.join(
-            special_pages))
-        if len(description):
-            print('Library Results')
-            print('\n'.join(
-                description[:10]))
-    else:
-        if not len(description):
-            return print('No results found.')
-
-        desc_str = '\n'.join(description[:15])
-        print('Search Results')
-        print(desc_str)
-
-    print('See More')
-    print(f'[`{query}` results]({url})')
+    print("Didn't find what you were looking for?")
+    print(f'See more [`{query}` results]({url})')
 
 
-cppref(search)
+search = ""
+search = input("Input: ")
+cref(search)
