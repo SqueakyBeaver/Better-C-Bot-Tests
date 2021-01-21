@@ -1,6 +1,8 @@
 import glob
 import os
 
+repeat_namespaces = ["experimental", "chrono", "filesystem"]
+
 
 def get_libs_list(language: str):
     with open(f"src/cppref/{language}libs.txt", "r") as libs:
@@ -57,6 +59,10 @@ def cppref(query: str):
             f"[`({i[0]}) {'/'.join(i[1:])}`](http://en.cppreference.com/w/cpp/{'/'.join(i)})")
 
     for i in results["libs"]:
+        if i[0] in repeat_namespaces:
+            lib_results.append(
+                f"[`({i[0]}) std::{'::'.join(i)}`](http://en.cppreference.com/w/cpp/{'/'.join(i)})")
+            continue
         lib_results.append(
             f"[`({i[0]}) std::{'::'.join(i[1:])}`](http://en.cppreference.com/w/cpp/{'/'.join(i)})")
 
@@ -98,4 +104,4 @@ def cref(query: str):
 
 search = ""
 search = input("Input: ")
-cref(search)
+cppref(search)

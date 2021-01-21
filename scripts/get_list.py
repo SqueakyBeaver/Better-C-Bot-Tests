@@ -4,7 +4,7 @@ import glob
 
 def get_lists():
     specials = ["named_req", "language", "keyword", "header",
-                "concepts", "types", "preprocessor", "keywords", "experimental"]  # experimental is annoying to include
+                "concepts", "types", "preprocessor", "keywords"]
     with open("src/cppref/cpplibs.txt", "w+") as libs:
         dirs = glob.iglob("src/cppref/cpp/**", recursive=True)
         dirs = (a.replace("\\", "/").replace(".html", "") for a in dirs)
